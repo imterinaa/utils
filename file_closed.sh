@@ -1,20 +1,26 @@
 #!/bin/bash
+PORT=8080
+OUTPUT_FILE="sample.xml"
 
-# Путь к XML файлу
-xml_file="path/to/your/xml/file.xml"
+while true; do
+        request = $(nc -l -p $PORT)
+        echo "Recieved request:"
+        echo "$request"
 
-# Закрывающийся тег для проверки
-closing_tag="</com.xiriuz.sema.xml.schillerEDI.SchillerEDI>"
+        data=$(echo "$request" | awk '/^$/ {p=1; next} p')
 
-# Проверяем, существует ли файл
-if [ ! -f "$xml_file" ]; then
-    echo "Ошибка: Файл $xml_file не существует."
-    exit 1
-fi
-
-# Проверяем, содержит ли файл закрывающийся тег
-if grep -q "$closing_tag" "$xml_file"; then
-    echo "XML файл содержит закрывающийся тег: $closing_tag"
-else
-    echo "XML файл НЕ содержит закрывающийся тег: $closing_tag"
-fi
+        echo "Recieved data:"
+        echo "$data"
+        
+        echo "$data" >> "${OUTPUT_FILE}"
+        closing_tag="</com.xiriuz.sema.xml.schillerEDI.SchillerEDI>"
+        if [ ! -f "${OUTPUT_FILE}" ]; then
+            echo "Файл ${OUTPUT_FILE} не существует."
+        fi
+        if grep -q "$closing_tag" "${OUTPUT_FILE}"; then
+            echo "XML файл содержит закрывающийся тег: $closing_tag"
+            ./sendfile.sh 
+            rm "${OUTPUT_FILE}"
+        else
+            echo "XML файл НЕ содержит закрывающийся тег: $closing_tag"
+        fi
